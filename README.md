@@ -20,9 +20,7 @@ This branch focuses on a section-level prototype:
 
 ## Run Locally
 
-Because this is a static MVP, you can open `index.html` directly in a browser.
-
-To serve it locally:
+This branch loads venue configuration from JSON files, so serve the folder locally instead of opening `index.html` directly:
 
 ```bash
 python3 -m http.server 4173
