@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShadeSeats</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Los Angeles baseball and soccer</p>
+          <h1>ShadeSeats</h1>
+        </div>
+        <div class="legend" aria-label="Shade legend">
+          <span><i class="shade-dot"></i>Shade</span>
+          <span><i class="mixed-dot"></i>Mixed</span>
+          <span><i class="sun-dot"></i>Sun</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="control-panel" aria-label="Event controls">
+          <label>
+            <span>Venue</span>
+            <select id="venueSelect"></select>
+          </label>
+
+          <div class="control-grid">
+            <label>
+              <span>Date</span>
+              <input id="eventDate" type="date" />
+            </label>
+            <label>
+              <span>Start</span>
+              <input id="startTime" type="time" step="900" />
+            </label>
+          </div>
+
+          <label>
+            <span>Duration</span>
+            <select id="durationSelect">
+              <option value="105">1:45</option>
+              <option value="120">2:00</option>
+              <option value="150">2:30</option>
+              <option value="180" selected>3:00</option>
+              <option value="210">3:30</option>
+              <option value="240">4:00</option>
+            </select>
+          </label>
+
+          <label class="slider-label">
+            <span id="timeLabel">Event time</span>
+            <input id="timeSlider" type="range" min="0" max="180" value="0" step="5" />
+          </label>
+
+          <button id="playButton" class="play-button" type="button">Play</button>
+
+          <div class="note-box">
+            <strong>Section-level MVP</strong>
+            <p>Results are estimates based on simplified venue geometry, sun position, section facing, and partial cover assumptions.</p>
+          </div>
+        </section>
+
+        <section class="map-stage" aria-label="Interactive stadium shade map">
+          <div class="map-shell">
+            <svg id="stadiumSvg" viewBox="0 0 920 760" role="img" aria-labelledby="mapTitle mapDesc">
+              <title id="mapTitle">Section-level stadium shade map</title>
+              <desc id="mapDesc">Sections are colored by estimated shade status for the selected event time.</desc>
+              <g id="bowlLayer"></g>
+              <g id="sectionLayer"></g>
+              <g id="fieldLayer"></g>
+              <g id="sunLayer"></g>
+            </svg>
+          </div>
+        </section>
+
+        <aside class="detail-panel" aria-label="Section details">
+          <section class="metric-block">
+            <p class="metric-label">Current Sun</p>
+            <h2 id="sunStatus">--</h2>
+            <p id="sunMeta" class="muted">--</p>
+          </section>
+
+          <section class="metric-block">
+            <p class="metric-label">Selected Section</p>
+            <h2 id="sectionName">Choose a section</h2>
+            <p id="sectionMeta" class="muted">--</p>
+          </section>
+
+          <section>
+            <div class="panel-heading">
+              <h3>Best Shade Now</h3>
+              <span id="bestCount"></span>
+            </div>
+            <div id="bestList" class="section-list"></div>
+          </section>
+
+          <section>
+            <div class="panel-heading">
+              <h3>Selected Timeline</h3>
+              <span id="timelineRange"></span>
+            </div>
+            <div id="timelineBars" class="timeline-bars"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./src/venues.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,110 @@
+const venues = [
+  {
+    id: "dodger-stadium",
+    name: "Dodger Stadium",
+    sport: "Baseball",
+    latitude: 34.0739,
+    longitude: -118.24,
+    rotation: 42,
+    rimStrength: 0.78,
+    fieldType: "baseball",
+    defaultStartTime: "13:10",
+    notes: "Open bowl with stronger late-day shadows on the upper reserve sides.",
+    coverByLevel: {
+      lower: 0.08,
+      club: 0.18,
+      upper: 0.28,
+    },
+  },
+  {
+    id: "angel-stadium",
+    name: "Angel Stadium",
+    sport: "Baseball",
+    latitude: 33.8003,
+    longitude: -117.8827,
+    rotation: 38,
+    rimStrength: 0.7,
+    fieldType: "baseball",
+    defaultStartTime: "13:07",
+    notes: "Open bowl with moderate upper-tier self-shade.",
+    coverByLevel: {
+      lower: 0.06,
+      club: 0.16,
+      upper: 0.24,
+    },
+  },
+  {
+    id: "bmo-stadium",
+    name: "BMO Stadium",
+    sport: "Soccer",
+    latitude: 34.0128,
+    longitude: -118.2845,
+    rotation: 0,
+    rimStrength: 0.95,
+    fieldType: "soccer",
+    defaultStartTime: "19:30",
+    notes: "Compact soccer bowl with partial roof coverage.",
+    coverByLevel: {
+      lower: 0.18,
+      club: 0.35,
+      upper: 0.58,
+    },
+  },
+  {
+    id: "dignity-health-sports-park",
+    name: "Dignity Health Sports Park",
+    sport: "Soccer",
+    latitude: 33.8644,
+    longitude: -118.2611,
+    rotation: 7,
+    rimStrength: 0.88,
+    fieldType: "soccer",
+    defaultStartTime: "19:30",
+    notes: "Open soccer stadium with stronger coverage assumptions on the west side.",
+    coverByLevel: {
+      lower: 0.14,
+      club: 0.3,
+      upper: 0.5,
+    },
+  },
+  {
+    id: "rose-bowl",
+    name: "Rose Bowl",
+    sport: "Soccer",
+    latitude: 34.1613,
+    longitude: -118.1676,
+    rotation: 5,
+    rimStrength: 0.62,
+    fieldType: "soccer",
+    defaultStartTime: "18:00",
+    notes: "Large open bowl with limited structural cover.",
+    coverByLevel: {
+      lower: 0.03,
+      club: 0.1,
+      upper: 0.16,
+    },
+  },
+];
+
+const levels = [
+  { id: "lower", label: "Lower", innerRadius: 190, outerRadius: 252 },
+  { id: "club", label: "Club", innerRadius: 258, outerRadius: 306 },
+  { id: "upper", label: "Upper", innerRadius: 312, outerRadius: 364 },
+];
+
+const compassZones = [
+  "North",
+  "Northeast",
+  "East",
+  "Southeast",
+  "South",
+  "Southwest",
+  "West",
+  "Northwest",
+];
+
+window.ShadeSeatsData = {
+  compassZones,
+  levels,
+  venues,
+};
