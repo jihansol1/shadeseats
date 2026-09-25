@@ -55,6 +55,18 @@ Run the solar engine sanity checks:
 npm run verify:solar
 ```
 
+Run the shade scoring sanity checks:
+
+```bash
+npm run verify:shade
+```
+
+Run all current checks:
+
+```bash
+npm run verify
+```
+
 ## MVP Accuracy Note
 
 This version uses approximate section geometry and heuristic shade scoring. It is meant to validate the product experience before investing in row-level or seat-level stadium geometry.

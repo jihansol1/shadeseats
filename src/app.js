@@ -1,4 +1,5 @@
 import { loadAppData } from "./data.js";
+import { buildSections, scoreSection, scoreSections, normalizeDegrees } from "./shade.js";
 import { getSunPosition } from "./solar.js";
 
 const CENTER = { x: 460, y: 380 };
@@ -80,10 +81,10 @@ async function init() {
 }
 
 function render() {
-  const sections = buildSections(state.venue);
+  const sections = buildSections(state.venue, state.levels, state.compassZones);
   const time = getEventTime(Number(els.timeSlider.value));
   const sun = getSunPosition(time, state.venue.latitude, state.venue.longitude);
-  const scoredSections = sections.map((section) => scoreSection(section, sun, state.venue));
+  const scoredSections = scoreSections(sections, sun, state.venue);
 
   if (!state.selectedSectionId || !scoredSections.some((section) => section.id === state.selectedSectionId)) {
     state.selectedSectionId = scoredSections[0].id;
@@ -91,73 +92,6 @@ function render() {
 
   renderStadium(scoredSections, sun);
   renderDetails(scoredSections, sun, time);
-}
-
-function buildSections(venue) {
-  const slice = 360 / state.compassZones.length;
-  const sections = [];
-
-  state.levels.forEach((level) => {
-    state.compassZones.forEach((zoneName, zoneIndex) => {
-      const startAngle = zoneIndex * slice - slice / 2;
-      const endAngle = zoneIndex * slice + slice / 2;
-      const centerAngle = normalizeDegrees((startAngle + endAngle) / 2);
-      const westCanopyBoost = venue.id === "dignity-health-sports-park" && angularDiff(centerAngle, 270) < 65 ? 0.26 : 0;
-      const baseballHomePlateBoost = venue.fieldType === "baseball" && angularDiff(centerAngle, 180) < 42 ? 0.08 : 0;
-
-      sections.push({
-        id: `${venue.id}-${level.id}-${zoneIndex}`,
-        name: `${zoneName} ${level.label}`,
-        level: level.id,
-        startAngle,
-        endAngle,
-        centerAngle,
-        innerRadius: level.innerRadius,
-        outerRadius: level.outerRadius,
-        baseCover: clamp(venue.coverByLevel[level.id] + westCanopyBoost + baseballHomePlateBoost, 0, 0.86),
-      });
-    });
-  });
-
-  return sections;
-}
-
-function scoreSection(section, sun, venue) {
-  if (sun.elevation <= 0) {
-    return {
-      ...section,
-      shadeScore: 1,
-      status: "shade",
-      glare: "No direct sun",
-    };
-  }
-
-  const sectionBearing = normalizeDegrees(section.centerAngle + venue.rotation);
-  const shadowBearing = normalizeDegrees(sun.azimuth + 180);
-  const shadowAlignment = 1 - clamp(angularDiff(sectionBearing, shadowBearing) / 58, 0, 1);
-  const lowSunFactor = clamp((38 - sun.elevation) / 38, 0, 1);
-  const rimShade = shadowAlignment * lowSunFactor * venue.rimStrength;
-  const coverShade =
-    section.level === "upper"
-      ? section.baseCover
-      : section.baseCover * clamp((55 - sun.elevation) / 55, 0.24, 1);
-  const shadeScore = clamp(Math.max(coverShade, rimShade) + 0.18 * Math.min(coverShade, rimShade), 0, 1);
-
-  const fanFacing = normalizeDegrees(sectionBearing + 180);
-  const faceAngle = angularDiff(fanFacing, sun.azimuth);
-  const glare =
-    faceAngle < 45 && sun.elevation > 5
-      ? "Sun in face"
-      : faceAngle < 85 && sun.elevation > 5
-        ? "Side sun"
-        : "Sun behind";
-
-  return {
-    ...section,
-    shadeScore,
-    status: shadeScore >= 0.68 ? "shade" : shadeScore >= 0.38 ? "mixed" : "sun",
-    glare,
-  };
 }
 
 function renderStadium(sections, sun) {
@@ -368,7 +302,7 @@ function renderTimeline(section) {
   for (let minute = 0; minute <= duration; minute += 30) {
     const sampleTime = getEventTime(minute);
     const sampleSun = getSunPosition(sampleTime, state.venue.latitude, state.venue.longitude);
-    const matchingSection = buildSections(state.venue).find((candidate) => candidate.id === section.id);
+    const matchingSection = buildSections(state.venue, state.levels, state.compassZones).find((candidate) => candidate.id === section.id);
     rows.push({
       minute,
       time: sampleTime,
@@ -462,19 +396,6 @@ function formatClock(time) {
   const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${String(time.minute).padStart(2, "0")} ${suffix}`;
-}
-
-function normalizeDegrees(value) {
-  return ((value % 360) + 360) % 360;
-}
-
-function angularDiff(a, b) {
-  const diff = Math.abs(normalizeDegrees(a) - normalizeDegrees(b));
-  return Math.min(diff, 360 - diff);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function showFatalError(error) {

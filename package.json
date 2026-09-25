@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "verify": "npm run verify:solar && npm run verify:shade",
+    "verify:shade": "node scripts/verify-shade.js",
     "verify:solar": "node scripts/verify-solar.js"
   }
 }
