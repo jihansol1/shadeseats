@@ -1,4 +1,5 @@
-const { compassZones, levels, venues } = window.ShadeSeatsData;
+import { loadAppData } from "./data.js";
+
 const CENTER = { x: 460, y: 380 };
 const DEG = Math.PI / 180;
 const STATUS = {
@@ -8,7 +9,10 @@ const STATUS = {
 };
 
 const state = {
-  venue: venues[0],
+  compassZones: [],
+  levels: [],
+  venues: [],
+  venue: null,
   selectedSectionId: null,
   playing: false,
   timer: null,
@@ -36,8 +40,14 @@ const els = {
   timelineBars: document.getElementById("timelineBars"),
 };
 
-function init() {
-  venues.forEach((venue) => {
+async function init() {
+  const data = await loadAppData();
+  state.compassZones = data.compassZones;
+  state.levels = data.levels;
+  state.venues = data.venues;
+  state.venue = state.venues[0];
+
+  state.venues.forEach((venue) => {
     const option = document.createElement("option");
     option.value = venue.id;
     option.textContent = `${venue.name} (${venue.sport})`;
@@ -49,7 +59,7 @@ function init() {
   els.timeSlider.max = els.durationSelect.value;
 
   els.venueSelect.addEventListener("change", () => {
-    state.venue = venues.find((venue) => venue.id === els.venueSelect.value) || venues[0];
+    state.venue = state.venues.find((venue) => venue.id === els.venueSelect.value) || state.venues[0];
     state.selectedSectionId = null;
     els.startTime.value = state.venue.defaultStartTime;
     render();
@@ -83,11 +93,11 @@ function render() {
 }
 
 function buildSections(venue) {
-  const slice = 360 / compassZones.length;
+  const slice = 360 / state.compassZones.length;
   const sections = [];
 
-  levels.forEach((level) => {
-    compassZones.forEach((zoneName, zoneIndex) => {
+  state.levels.forEach((level) => {
+    state.compassZones.forEach((zoneName, zoneIndex) => {
       const startAngle = zoneIndex * slice - slice / 2;
       const endAngle = zoneIndex * slice + slice / 2;
       const centerAngle = normalizeDegrees((startAngle + endAngle) / 2);
@@ -535,4 +545,15 @@ function wrap(value, modulo) {
   return ((value % modulo) + modulo) % modulo;
 }
 
-init();
+function showFatalError(error) {
+  console.error(error);
+  document.body.innerHTML = `
+    <main style="max-width: 680px; margin: 64px auto; padding: 24px; font-family: system-ui, sans-serif; line-height: 1.5;">
+      <h1>ShadeSeats could not load venue data</h1>
+      <p>Run the app through a local server so the browser can fetch files from the <code>data/</code> folder.</p>
+      <pre style="padding: 16px; overflow: auto; background: #f3efe7; border: 1px solid #d8d0c2;">${error.message}</pre>
+    </main>
+  `;
+}
+
+init().catch(showFatalError);
