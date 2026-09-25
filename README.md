@@ -47,6 +47,14 @@ Then visit:
 http://localhost:8080
 ```
 
+## Verification
+
+Run the solar engine sanity checks:
+
+```bash
+npm run verify:solar
+```
+
 ## MVP Accuracy Note
 
 This version uses approximate section geometry and heuristic shade scoring. It is meant to validate the product experience before investing in row-level or seat-level stadium geometry.
