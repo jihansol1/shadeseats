@@ -30,8 +30,18 @@ const els = {
   playButton: document.getElementById("playButton"),
   bowlLayer: document.getElementById("bowlLayer"),
   sectionLayer: document.getElementById("sectionLayer"),
+  selectionLayer: document.getElementById("selectionLayer"),
   fieldLayer: document.getElementById("fieldLayer"),
   sunLayer: document.getElementById("sunLayer"),
+  venueName: document.getElementById("venueName"),
+  venueMeta: document.getElementById("venueMeta"),
+  venueNote: document.getElementById("venueNote"),
+  mapVenueTitle: document.getElementById("mapVenueTitle"),
+  mapVenueSubtitle: document.getElementById("mapVenueSubtitle"),
+  mapStatusStrip: document.getElementById("mapStatusStrip"),
+  shadeCount: document.getElementById("shadeCount"),
+  mixedCount: document.getElementById("mixedCount"),
+  sunCount: document.getElementById("sunCount"),
   sunStatus: document.getElementById("sunStatus"),
   sunMeta: document.getElementById("sunMeta"),
   sectionName: document.getElementById("sectionName"),
@@ -97,6 +107,7 @@ function render() {
 function renderStadium(sections, sun) {
   els.bowlLayer.replaceChildren();
   els.sectionLayer.replaceChildren();
+  els.selectionLayer.replaceChildren();
   els.fieldLayer.replaceChildren();
   els.sunLayer.replaceChildren();
 
@@ -123,7 +134,7 @@ function renderStadium(sections, sun) {
       class: `section-path${section.id === state.selectedSectionId ? " selected" : ""}`,
       tabindex: "0",
       role: "button",
-      "aria-label": `${section.name}, ${STATUS[section.status].label}`,
+      "aria-label": `${section.name}, ${STATUS[section.status].label}, ${Math.round(section.shadeScore * 100)} percent shade confidence`,
     });
 
     path.addEventListener("click", () => {
@@ -152,8 +163,55 @@ function renderStadium(sections, sun) {
     els.sectionLayer.appendChild(label);
   });
 
+  const selected = sections.find((section) => section.id === state.selectedSectionId);
+  if (selected) {
+    renderSelection(selected);
+  }
+
   renderField();
   renderSun(sun);
+}
+
+function renderSelection(section) {
+  const anchor = polarToSvg(section.outerRadius + 20, section.centerAngle + state.venue.rotation);
+  const labelAnchor = polarToSvg(section.outerRadius + 78, section.centerAngle + state.venue.rotation);
+
+  els.selectionLayer.appendChild(
+    svgEl("path", {
+      d: annularSectorPath(
+        section.innerRadius - 4,
+        section.outerRadius + 4,
+        section.startAngle + state.venue.rotation,
+        section.endAngle + state.venue.rotation,
+      ),
+      class: "selection-ring",
+    }),
+  );
+  els.selectionLayer.appendChild(
+    svgEl("line", {
+      x1: anchor.x,
+      y1: anchor.y,
+      x2: labelAnchor.x,
+      y2: labelAnchor.y,
+      class: "selection-line",
+    }),
+  );
+
+  const badge = svgEl("g", {
+    transform: `translate(${labelAnchor.x - 58} ${labelAnchor.y - 18})`,
+    class: "selection-badge",
+  });
+  badge.appendChild(svgEl("rect", { width: 116, height: 36, rx: 7 }));
+
+  const name = svgEl("text", { x: 58, y: 15, class: "selection-badge-title" });
+  name.textContent = shortSectionName(section.name);
+  badge.appendChild(name);
+
+  const score = svgEl("text", { x: 58, y: 29, class: "selection-badge-meta" });
+  score.textContent = `${STATUS[section.status].label} ${Math.round(section.shadeScore * 100)}%`;
+  badge.appendChild(score);
+
+  els.selectionLayer.appendChild(badge);
 }
 
 function renderField() {
@@ -258,8 +316,24 @@ function renderSun(sun) {
 function renderDetails(sections, sun, time) {
   const selected = sections.find((section) => section.id === state.selectedSectionId) || sections[0];
   const shadedCount = sections.filter((section) => section.status === "shade").length;
+  const mixedCount = sections.filter((section) => section.status === "mixed").length;
+  const sunCount = sections.filter((section) => section.status === "sun").length;
   const shadedPercent = Math.round((shadedCount / sections.length) * 100);
   const offset = Number(els.timeSlider.value);
+
+  els.venueName.textContent = state.venue.name;
+  els.venueMeta.textContent = `${state.venue.sport} · ${state.levels.length} levels · ${sections.length} sections`;
+  els.venueNote.textContent = state.venue.notes;
+  els.mapVenueTitle.textContent = state.venue.name;
+  els.mapVenueSubtitle.textContent = `${formatClock(time)} · ${state.venue.sport} · section-level model`;
+  els.shadeCount.textContent = shadedCount;
+  els.mixedCount.textContent = mixedCount;
+  els.sunCount.textContent = sunCount;
+  els.mapStatusStrip.replaceChildren(
+    statusPill("shade", shadedCount),
+    statusPill("mixed", mixedCount),
+    statusPill("sun", sunCount),
+  );
 
   els.timeLabel.textContent = `${formatClock(time)} (+${offset} min)`;
   els.sunStatus.textContent = sun.elevation <= 0 ? "Below horizon" : `${Math.round(sun.elevation)} degrees high`;
@@ -276,11 +350,11 @@ function renderDetails(sections, sun, time) {
     ...best.map((section) => {
       const card = document.createElement("button");
       card.type = "button";
-      card.className = "section-card";
+      card.className = `section-card${section.id === selected.id ? " is-selected" : ""}`;
       card.innerHTML = `
         <span>
           <strong>${section.name}</strong>
-          <span>${section.glare}</span>
+          <span>${STATUS[section.status].label} · ${section.glare}</span>
         </span>
         <b class="score-pill" style="background:${STATUS[section.status].color}">${Math.round(section.shadeScore * 100)}%</b>
       `;
@@ -293,6 +367,13 @@ function renderDetails(sections, sun, time) {
   );
 
   renderTimeline(selected);
+}
+
+function statusPill(status, count) {
+  const pill = document.createElement("span");
+  pill.className = `status-pill ${status}`;
+  pill.innerHTML = `<i></i><strong>${count}</strong> ${STATUS[status].label}`;
+  return pill;
 }
 
 function renderTimeline(section) {
@@ -315,6 +396,10 @@ function renderTimeline(section) {
     ...rows.map((row) => {
       const item = document.createElement("div");
       item.className = "timeline-row";
+      item.setAttribute(
+        "aria-label",
+        `${formatClock(row.time)} ${STATUS[row.section.status].label} ${Math.round(row.section.shadeScore * 100)} percent`,
+      );
       item.innerHTML = `
         <span>${formatClock(row.time)}</span>
         <span class="bar-track">
@@ -396,6 +481,13 @@ function formatClock(time) {
   const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${String(time.minute).padStart(2, "0")} ${suffix}`;
+}
+
+function shortSectionName(name) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("");
 }
 
 function showFatalError(error) {

@@ -50,6 +50,15 @@
             </select>
           </label>
 
+          <div class="venue-card" aria-live="polite">
+            <div>
+              <p class="metric-label">Venue Model</p>
+              <strong id="venueName">--</strong>
+              <span id="venueMeta">--</span>
+            </div>
+            <p id="venueNote">--</p>
+          </div>
+
           <label class="slider-label">
             <span id="timeLabel">Event time</span>
             <input id="timeSlider" type="range" min="0" max="180" value="0" step="5" />
@@ -64,12 +73,21 @@
         </section>
 
         <section class="map-stage" aria-label="Interactive stadium shade map">
+          <div class="map-toolbar">
+            <div>
+              <p class="metric-label">Map View</p>
+              <h2 id="mapVenueTitle">--</h2>
+              <p id="mapVenueSubtitle" class="muted">--</p>
+            </div>
+            <div id="mapStatusStrip" class="status-strip" aria-label="Current section status counts"></div>
+          </div>
           <div class="map-shell">
             <svg id="stadiumSvg" viewBox="0 0 920 760" role="img" aria-labelledby="mapTitle mapDesc">
               <title id="mapTitle">Section-level stadium shade map</title>
               <desc id="mapDesc">Sections are colored by estimated shade status for the selected event time.</desc>
               <g id="bowlLayer"></g>
               <g id="sectionLayer"></g>
+              <g id="selectionLayer"></g>
               <g id="fieldLayer"></g>
               <g id="sunLayer"></g>
             </svg>
@@ -77,6 +95,24 @@
         </section>
 
         <aside class="detail-panel" aria-label="Section details">
+          <section class="summary-block">
+            <p class="metric-label">Current Map</p>
+            <div class="summary-grid">
+              <div>
+                <strong id="shadeCount">--</strong>
+                <span>Shade</span>
+              </div>
+              <div>
+                <strong id="mixedCount">--</strong>
+                <span>Mixed</span>
+              </div>
+              <div>
+                <strong id="sunCount">--</strong>
+                <span>Sun</span>
+              </div>
+            </div>
+          </section>
+
           <section class="metric-block">
             <p class="metric-label">Current Sun</p>
             <h2 id="sunStatus">--</h2>
