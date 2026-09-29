@@ -27,6 +27,12 @@ const els = {
   durationSelect: document.getElementById("durationSelect"),
   timeSlider: document.getElementById("timeSlider"),
   timeLabel: document.getElementById("timeLabel"),
+  phaseLabel: document.getElementById("phaseLabel"),
+  phaseMeta: document.getElementById("phaseMeta"),
+  stepBackButton: document.getElementById("stepBackButton"),
+  stepForwardButton: document.getElementById("stepForwardButton"),
+  jumpStartButton: document.getElementById("jumpStartButton"),
+  jumpEndButton: document.getElementById("jumpEndButton"),
   playButton: document.getElementById("playButton"),
   bowlLayer: document.getElementById("bowlLayer"),
   sectionLayer: document.getElementById("sectionLayer"),
@@ -49,6 +55,7 @@ const els = {
   bestCount: document.getElementById("bestCount"),
   bestList: document.getElementById("bestList"),
   timelineRange: document.getElementById("timelineRange"),
+  exposureSummary: document.getElementById("exposureSummary"),
   timelineBars: document.getElementById("timelineBars"),
 };
 
@@ -66,14 +73,18 @@ async function init() {
     els.venueSelect.appendChild(option);
   });
 
+  state.venue = state.venues.find((venue) => venue.id === els.venueSelect.value) || state.venue;
+
   els.eventDate.value = new Date().toISOString().slice(0, 10);
   els.startTime.value = state.venue.defaultStartTime;
-  els.timeSlider.max = els.durationSelect.value;
+  setDurationForVenue(state.venue);
 
   els.venueSelect.addEventListener("change", () => {
     state.venue = state.venues.find((venue) => venue.id === els.venueSelect.value) || state.venues[0];
     state.selectedSectionId = null;
     els.startTime.value = state.venue.defaultStartTime;
+    setDurationForVenue(state.venue);
+    els.timeSlider.value = 0;
     render();
   });
 
@@ -81,10 +92,13 @@ async function init() {
   els.startTime.addEventListener("change", render);
   els.timeSlider.addEventListener("input", render);
   els.durationSelect.addEventListener("change", () => {
-    els.timeSlider.max = els.durationSelect.value;
-    els.timeSlider.value = Math.min(Number(els.timeSlider.value), Number(els.timeSlider.max));
+    syncTimelineMax();
     render();
   });
+  els.stepBackButton.addEventListener("click", () => stepTimeline(-15));
+  els.stepForwardButton.addEventListener("click", () => stepTimeline(15));
+  els.jumpStartButton.addEventListener("click", () => setTimelineOffset(0));
+  els.jumpEndButton.addEventListener("click", () => setTimelineOffset(Number(els.timeSlider.max)));
   els.playButton.addEventListener("click", togglePlayback);
 
   render();
@@ -320,12 +334,14 @@ function renderDetails(sections, sun, time) {
   const sunCount = sections.filter((section) => section.status === "sun").length;
   const shadedPercent = Math.round((shadedCount / sections.length) * 100);
   const offset = Number(els.timeSlider.value);
+  const duration = Number(els.durationSelect.value);
+  const phase = getEventPhase(offset, duration, state.venue.sport);
 
   els.venueName.textContent = state.venue.name;
   els.venueMeta.textContent = `${state.venue.sport} · ${state.levels.length} levels · ${sections.length} sections`;
   els.venueNote.textContent = state.venue.notes;
   els.mapVenueTitle.textContent = state.venue.name;
-  els.mapVenueSubtitle.textContent = `${formatClock(time)} · ${state.venue.sport} · section-level model`;
+  els.mapVenueSubtitle.textContent = `${formatClock(time)} · ${phase.label} · section-level model`;
   els.shadeCount.textContent = shadedCount;
   els.mixedCount.textContent = mixedCount;
   els.sunCount.textContent = sunCount;
@@ -336,6 +352,8 @@ function renderDetails(sections, sun, time) {
   );
 
   els.timeLabel.textContent = `${formatClock(time)} (+${offset} min)`;
+  els.phaseLabel.textContent = phase.label;
+  els.phaseMeta.textContent = `${phase.progress}% of event elapsed`;
   els.sunStatus.textContent = sun.elevation <= 0 ? "Below horizon" : `${Math.round(sun.elevation)} degrees high`;
   els.sunMeta.textContent = `${Math.round(sun.azimuth)} degree azimuth. ${shadedPercent}% of sections are shaded now.`;
 
@@ -379,6 +397,7 @@ function statusPill(status, count) {
 function renderTimeline(section) {
   const duration = Number(els.durationSelect.value);
   const rows = [];
+  const exposure = getExposureSummary(section, duration);
 
   for (let minute = 0; minute <= duration; minute += 30) {
     const sampleTime = getEventTime(minute);
@@ -392,6 +411,7 @@ function renderTimeline(section) {
   }
 
   els.timelineRange.textContent = `${formatClock(getEventTime(0))}-${formatClock(getEventTime(duration))}`;
+  els.exposureSummary.replaceChildren(renderExposureSummary(exposure));
   els.timelineBars.replaceChildren(
     ...rows.map((row) => {
       const item = document.createElement("div");
@@ -402,6 +422,7 @@ function renderTimeline(section) {
       );
       item.innerHTML = `
         <span>${formatClock(row.time)}</span>
+        <span>${getEventPhase(row.minute, duration, state.venue.sport).shortLabel}</span>
         <span class="bar-track">
           <i class="bar-fill" style="width:${Math.max(8, row.section.shadeScore * 100)}%;background:${STATUS[row.section.status].color}"></i>
         </span>
@@ -416,9 +437,53 @@ function renderTimeline(section) {
   );
 }
 
+function getExposureSummary(section, duration) {
+  const totals = { shade: 0, mixed: 0, sun: 0 };
+  const sampleStep = 5;
+
+  for (let minute = 0; minute <= duration; minute += sampleStep) {
+    const sampleTime = getEventTime(minute);
+    const sampleSun = getSunPosition(sampleTime, state.venue.latitude, state.venue.longitude);
+    const matchingSection = buildSections(state.venue, state.levels, state.compassZones).find((candidate) => candidate.id === section.id);
+    const scored = scoreSection(matchingSection, sampleSun, state.venue);
+    totals[scored.status] += sampleStep;
+  }
+
+  const sampledMinutes = totals.shade + totals.mixed + totals.sun;
+  const percentages = Object.fromEntries(
+    Object.entries(totals).map(([status, minutes]) => [status, Math.round((minutes / sampledMinutes) * 100)]),
+  );
+  const primaryStatus = Object.entries(percentages).sort((a, b) => b[1] - a[1])[0][0];
+
+  return {
+    percentages,
+    primaryStatus,
+    label: `${STATUS[primaryStatus].label} most of event`,
+  };
+}
+
+function renderExposureSummary(exposure) {
+  const wrap = document.createElement("div");
+  wrap.className = "exposure-card";
+  wrap.innerHTML = `
+    <div>
+      <p class="metric-label">Selected Exposure</p>
+      <strong>${exposure.label}</strong>
+      <span>${exposure.percentages.sun}% sun · ${exposure.percentages.mixed}% mixed · ${exposure.percentages.shade}% shade</span>
+    </div>
+    <div class="exposure-stack" aria-label="Selected section exposure breakdown">
+      ${["sun", "mixed", "shade"]
+        .map((status) => `<i class="${status}" style="width:${Math.max(2, exposure.percentages[status])}%"></i>`)
+        .join("")}
+    </div>
+  `;
+  return wrap;
+}
+
 function togglePlayback() {
   state.playing = !state.playing;
   els.playButton.textContent = state.playing ? "Pause" : "Play";
+  els.playButton.setAttribute("aria-pressed", String(state.playing));
 
   if (!state.playing) {
     clearInterval(state.timer);
@@ -427,9 +492,60 @@ function togglePlayback() {
 
   state.timer = setInterval(() => {
     const nextValue = Number(els.timeSlider.value) + 5;
-    els.timeSlider.value = nextValue > Number(els.timeSlider.max) ? 0 : nextValue;
+    if (nextValue > Number(els.timeSlider.max)) {
+      stopPlayback();
+      return;
+    }
+    els.timeSlider.value = nextValue;
     render();
   }, 450);
+}
+
+function stopPlayback() {
+  state.playing = false;
+  clearInterval(state.timer);
+  els.playButton.textContent = "Play";
+  els.playButton.setAttribute("aria-pressed", "false");
+}
+
+function stepTimeline(deltaMinutes) {
+  setTimelineOffset(Number(els.timeSlider.value) + deltaMinutes);
+}
+
+function setTimelineOffset(offsetMinutes) {
+  els.timeSlider.value = Math.min(Number(els.timeSlider.max), Math.max(0, offsetMinutes));
+  render();
+}
+
+function setDurationForVenue(venue) {
+  els.durationSelect.value = venue.sport === "Soccer" ? "105" : "180";
+  syncTimelineMax();
+}
+
+function syncTimelineMax() {
+  els.timeSlider.max = els.durationSelect.value;
+  els.timeSlider.value = Math.min(Number(els.timeSlider.value), Number(els.timeSlider.max));
+}
+
+function getEventPhase(offsetMinutes, durationMinutes, sport) {
+  const progress = durationMinutes === 0 ? 0 : Math.round((offsetMinutes / durationMinutes) * 100);
+
+  if (offsetMinutes === 0) {
+    return { label: sport === "Soccer" ? "Kickoff" : "Start", shortLabel: "Start", progress };
+  }
+  if (offsetMinutes >= durationMinutes) {
+    return { label: sport === "Soccer" ? "Full time" : "End", shortLabel: "End", progress: 100 };
+  }
+
+  if (sport === "Soccer") {
+    if (progress < 43) return { label: "First half", shortLabel: "1H", progress };
+    if (progress < 57) return { label: "Halftime window", shortLabel: "Half", progress };
+    return { label: "Second half", shortLabel: "2H", progress };
+  }
+
+  if (progress < 34) return { label: "Early game", shortLabel: "Early", progress };
+  if (progress < 67) return { label: "Middle innings", shortLabel: "Mid", progress };
+  return { label: "Late game", shortLabel: "Late", progress };
 }
 
 function getEventTime(offsetMinutes) {

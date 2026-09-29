@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShadeSeats</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=timeline-controls-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -24,7 +24,7 @@
         <section class="control-panel" aria-label="Event controls">
           <label>
             <span>Venue</span>
-            <select id="venueSelect"></select>
+            <select id="venueSelect" autocomplete="off"></select>
           </label>
 
           <div class="control-grid">
@@ -40,7 +40,7 @@
 
           <label>
             <span>Duration</span>
-            <select id="durationSelect">
+            <select id="durationSelect" autocomplete="off">
               <option value="105">1:45</option>
               <option value="120">2:00</option>
               <option value="150">2:30</option>
@@ -64,7 +64,18 @@
             <input id="timeSlider" type="range" min="0" max="180" value="0" step="5" />
           </label>
 
-          <button id="playButton" class="play-button" type="button">Play</button>
+          <div class="time-phase">
+            <strong id="phaseLabel">Start</strong>
+            <span id="phaseMeta">--</span>
+          </div>
+
+          <div class="timeline-controls" aria-label="Timeline controls">
+            <button id="jumpStartButton" type="button">Start</button>
+            <button id="stepBackButton" type="button">-15</button>
+            <button id="playButton" class="play-button" type="button">Play</button>
+            <button id="stepForwardButton" type="button">+15</button>
+            <button id="jumpEndButton" type="button">End</button>
+          </div>
 
           <div class="note-box">
             <strong>Section-level MVP</strong>
@@ -138,12 +149,13 @@
               <h3>Selected Timeline</h3>
               <span id="timelineRange"></span>
             </div>
+            <div id="exposureSummary" class="exposure-summary"></div>
             <div id="timelineBars" class="timeline-bars"></div>
           </section>
         </aside>
       </main>
     </div>
 
-    <script type="module" src="./src/app.js"></script>
+    <script type="module" src="./src/app.js?v=timeline-controls-2"></script>
   </body>
 </html>
