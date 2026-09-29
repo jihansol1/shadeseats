@@ -1,0 +1,20 @@
+[
+  {
+    "id": "lower",
+    "label": "Lower",
+    "innerRadius": 190,
+    "outerRadius": 252
+  },
+  {
+    "id": "club",
+    "label": "Club",
+    "innerRadius": 258,
+    "outerRadius": 306
+  },
+  {
+    "id": "upper",
+    "label": "Upper",
+    "innerRadius": 312,
+    "outerRadius": 364
+  }
+]
