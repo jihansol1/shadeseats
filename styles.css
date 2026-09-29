@@ -179,6 +179,40 @@ input[type="range"] {
   accent-color: var(--focus);
 }
 
+.time-phase {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.time-phase strong {
+  font-size: 0.96rem;
+}
+
+.time-phase span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.timeline-controls {
+  display: grid;
+  grid-template-columns: 0.85fr 0.72fr 1.2fr 0.72fr 0.85fr;
+  gap: 8px;
+}
+
+.timeline-controls button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 850;
+}
+
 .play-button {
   width: 100%;
   min-height: 44px;
@@ -188,6 +222,10 @@ input[type="range"] {
   color: #fff;
   cursor: pointer;
   font-weight: 850;
+}
+
+.timeline-controls .play-button {
+  min-height: 40px;
 }
 
 .note-box {
@@ -527,9 +565,61 @@ h3 {
   gap: 8px;
 }
 
+.exposure-summary {
+  margin-bottom: 12px;
+}
+
+.exposure-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.exposure-card strong,
+.exposure-card span {
+  display: block;
+}
+
+.exposure-card strong {
+  margin-bottom: 3px;
+  font-size: 0.96rem;
+}
+
+.exposure-card span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.exposure-stack {
+  height: 10px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ebe4d7;
+}
+
+.exposure-stack i {
+  min-width: 2px;
+}
+
+.exposure-stack .sun {
+  background: var(--sun);
+}
+
+.exposure-stack .mixed {
+  background: var(--mixed);
+}
+
+.exposure-stack .shade {
+  background: var(--shade);
+}
+
 .timeline-row {
   display: grid;
-  grid-template-columns: 54px 1fr 42px;
+  grid-template-columns: 54px 42px 1fr 42px;
   align-items: center;
   gap: 8px;
   min-height: 24px;
@@ -564,6 +654,8 @@ h3 {
   }
 
   .slider-label,
+  .time-phase,
+  .timeline-controls,
   .venue-card,
   .note-box {
     grid-column: 1 / -1;
@@ -608,5 +700,14 @@ h3 {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timeline-controls .play-button {
+    grid-column: 1 / -1;
+    grid-row: 1;
   }
 }
