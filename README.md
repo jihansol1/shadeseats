@@ -182,20 +182,62 @@ If the UI looks stale, hard refresh the browser:
 Cmd + Shift + R
 ```
 
-## Docker
+## Deployment
 
-Build and run the Nginx container:
-
-```bash
-docker build -t shadeseats-static-mvp .
-docker run --rm -p 8080:80 shadeseats-static-mvp
-```
-
-Then open:
+ShadeSeats is deployed as a static site on AWS:
 
 ```text
-http://localhost:8080/?fresh=timeline-controls-2
+Local static files -> S3 bucket -> CloudFront CDN -> public HTTPS URL
 ```
+
+Live deployment:
+
+```text
+https://d25wrpmoj90nsq.cloudfront.net
+```
+
+The current deployment uses:
+
+- Amazon S3 for static file hosting
+- Amazon CloudFront for CDN delivery and HTTPS access
+- CloudFront origin access control so the S3 bucket can stay private
+- `index.html` as the CloudFront default root object
+
+### Deploy To S3
+
+From the project root, sync only the files needed by the static app:
+
+```bash
+cd /Users/hansolji/Desktop/shadeseats
+
+aws s3 sync . s3://shadeseats-hansolji --delete \
+  --exclude "*" \
+  --include "index.html" \
+  --include "styles.css" \
+  --include "src/*" \
+  --include "data/*" \
+  --include "docs/screenshots/*" \
+  --profile shadeseats-5849
+```
+
+Verify the uploaded files:
+
+```bash
+aws s3 ls s3://shadeseats-hansolji --recursive --profile shadeseats-5849
+```
+
+### Refresh CloudFront
+
+After uploading changes, create a CloudFront invalidation so users receive the newest files:
+
+```bash
+aws cloudfront create-invalidation \
+  --distribution-id YOUR_DISTRIBUTION_ID \
+  --paths "/*" \
+  --profile shadeseats-5849
+```
+
+Replace `YOUR_DISTRIBUTION_ID` with the CloudFront distribution ID from the AWS Console.
 
 ## Verification
 
@@ -241,7 +283,6 @@ Likely next product steps:
 - add a backend API
 - add PostGIS or another geometry-aware data layer
 - eventually support seat-level shade estimates
-
 
 
 
