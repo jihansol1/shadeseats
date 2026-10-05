@@ -36,6 +36,13 @@ jobs:
       - name: Run verification checks
         run: npm run verify
 
+      - name: Debug OIDC claims
+        run: |
+          TOKEN_JSON=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+          TOKEN=$(echo "$TOKEN_JSON" | jq -r '.value')
+          PAYLOAD=$(echo "$TOKEN" | cut -d "." -f2)
+          PAYLOAD="$PAYLOAD" node -e "const payload = JSON.parse(Buffer.from(process.env.PAYLOAD, 'base64url').toString()); console.log(JSON.stringify({ aud: payload.aud, sub: payload.sub, repository: payload.repository, ref: payload.ref, job_workflow_ref: payload.job_workflow_ref }, null, 2));"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
