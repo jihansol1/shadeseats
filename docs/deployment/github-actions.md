@@ -24,7 +24,7 @@ It runs when code is pushed to `main` and can also be run manually from the GitH
 The workflow expects this AWS role to exist:
 
 ```text
-arn:aws:iam::584903217072:role/shadeseats-github-actions-deploy
+arn:aws:iam::584903217072:role/shadeseats-static-site-deploy
 ```
 
 The role should trust only this GitHub repository:
@@ -85,7 +85,7 @@ Then create the role:
 
 ```bash
 aws iam create-role \
-  --role-name shadeseats-github-actions-deploy \
+  --role-name shadeseats-static-site-deploy \
   --assume-role-policy-document file:///tmp/shadeseats-github-actions-trust.json \
   --profile shadeseats-5849
 ```
@@ -132,7 +132,7 @@ Attach the policy to the role:
 
 ```bash
 aws iam put-role-policy \
-  --role-name shadeseats-github-actions-deploy \
+  --role-name shadeseats-static-site-deploy \
   --policy-name shadeseats-static-site-deploy \
   --policy-document file:///tmp/shadeseats-github-actions-permissions.json \
   --profile shadeseats-5849
@@ -151,4 +151,3 @@ aws iam put-role-policy \
 ```text
 https://d25wrpmoj90nsq.cloudfront.net
 ```
-
