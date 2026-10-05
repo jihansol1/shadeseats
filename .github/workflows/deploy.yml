@@ -1,0 +1,59 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  S3_BUCKET: shadeseats-hansolji
+  CLOUDFRONT_DISTRIBUTION_ID: E2XWJ9R2X5RS86
+
+jobs:
+  verify-and-deploy:
+    name: Verify and deploy static site
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Run verification checks
+        run: npm run verify
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::584903217072:role/shadeseats-github-actions-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync static files to S3
+        run: |
+          aws s3 sync . "s3://${S3_BUCKET}" --delete \
+            --exclude "*" \
+            --include "index.html" \
+            --include "styles.css" \
+            --include "src/*" \
+            --include "data/*" \
+            --include "docs/screenshots/*"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*"
