@@ -239,6 +239,29 @@ aws cloudfront create-invalidation \
 
 Replace `YOUR_DISTRIBUTION_ID` with the CloudFront distribution ID from the AWS Console.
 
+## CI/CD
+
+The repository includes a GitHub Actions workflow for production deployment:
+
+```text
+.github/workflows/deploy.yml
+```
+
+When changes are pushed to `main`, the workflow:
+
+1. runs `npm run verify`
+2. assumes an AWS IAM role with GitHub OIDC
+3. syncs static files to the S3 bucket
+4. invalidates the CloudFront distribution
+
+The workflow can also be started manually from the GitHub Actions tab.
+
+One-time AWS setup instructions are documented in:
+
+```text
+docs/deployment/github-actions.md
+```
+
 ## Verification
 
 Run all current verification checks:
@@ -283,6 +306,5 @@ Likely next product steps:
 - add a backend API
 - add PostGIS or another geometry-aware data layer
 - eventually support seat-level shade estimates
-
 
 
